@@ -1,4 +1,4 @@
--- [[ klưn.z MASTER SYSTEM - ESP PERMANENT ON + VIPPRO HITBOX/AIM ]] --
+-- [[ klưn.z MASTER SYSTEM - 10% GRAPHICS & ANTI-TREE FIXED ]] --
 local p = game:GetService("Players").LocalPlayer
 local RS = game:GetService("RunService")
 local SG = game:GetService("StarterGui")
@@ -9,7 +9,7 @@ local Camera = workspace.CurrentCamera
 local playerGui = p:WaitForChild("PlayerGui", 10)
 if not playerGui then return end
 
--- Tự động xóa bản cũ
+-- Tự động dọn bản cũ tránh lỗi đè GUI
 local function clearOld(name) if playerGui:FindFirstChild(name) then playerGui[name]:Destroy() end end
 clearOld("klunz_Status_Global"); clearOld("klunz_Melee_Mini"); clearOld("klunz_Master_V6"); clearOld("klunz_Aimbot_Killer")
 
@@ -18,10 +18,10 @@ local _S = (math.sqrt(10000))
 local CONFIG1 = { EscapeHP = 100, SafeHP = 10, TargetHP = 30 }
 local CONFIG2 = { SelectedTarget = nil }
 
--- CẤU HÌNH HITBOX MỚI
-local _HITBOX_SIZE = 25 -- Chỉnh kích thước hitbox tại đây
+-- KÍCH THƯỚC HITBOX
+local _HITBOX_SIZE = 25 
 
--- Mặc định bật ESP ngay lập tức
+-- Trạng thái mặc định
 local activeESP = true 
 local activeEscape1, systemLock1 = true, false
 local activeCombat2 = false
@@ -59,7 +59,7 @@ meleeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- ||      MENU 1 (HỆ THỐNG & ESP)         ||
+-- ||      MENU 1 (HỆ THỐNG CHÍNH)         ||
 -- ==========================================
 local gui1 = Instance.new("ScreenGui", playerGui); gui1.Name = "klunz_Master_V6"; gui1.ResetOnSpawn = false 
 local frame1 = Instance.new("Frame", gui1); frame1.Size, frame1.Position = UDim2.new(0,210,0,400), UDim2.new(0.1,0,0.3,0)
@@ -97,6 +97,47 @@ createBtn1("⭐ SUPER HOP", Color3.fromRGB(0, 120, 50), function()
             if s.id ~= game.JobId and s.playing <= (s.maxPlayers - 2) then TP:TeleportToPlaceInstance(game.PlaceId, s.id, p) return end
         end
     end
+end)
+
+-- NÚT GIẢM HIỆU ỨNG + DIỆT CÂY (SIÊU MƯỢT, ANTI-LAG)
+createBtn1("⚡ 10% GRAPHICS + XOÁ CÂY", Color3.fromRGB(130, 50, 0), function()
+    task.spawn(function()
+        -- 1. Hạ cấu hình Lighting về mức thấp nhất
+        local L = game:GetService("Lighting")
+        L.GlobalShadows = false
+        L.Brightness = 0
+        L.FogEnd = 9e9
+        for _, v in pairs(L:GetChildren()) do
+            if v:IsA("PostEffect") or v:IsA("Atmosphere") or v:IsA("Sky") then 
+                v:Destroy() 
+            end
+        end
+        
+        -- 2. Quét Workspace để hạ cấu hình và DIỆT CÂY CỐI
+        local count = 0
+        for _, v in pairs(workspace:GetDescendants()) do
+            -- Nhận diện và xóa cây cối (Tên có chứa Tree, Leaves, Leaf, Bush)
+            local nameLower = string.lower(v.Name)
+            if string.find(nameLower, "tree") or string.find(nameLower, "leaves") or string.find(nameLower, "leaf") or string.find(nameLower, "bush") then
+                v:Destroy()
+            -- Tối ưu các Part thông thường còn lại
+            elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v:Destroy()
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Sparkles") then
+                v:Destroy()
+            end
+            
+            count = count + 1
+            -- Chia nhỏ chu kỳ quét để bảo vệ Engine di chuyển (không bị nghẽn phím)
+            if count % 30 == 0 then 
+                task.wait(0.01) 
+            end
+        end
+        SG:SetCore("SendNotification", { Title = "klưn.z SYSTEM", Text = "Đã dọn sạch cây & tối ưu 10%!", Duration = 2 })
+    end)
 end)
 
 local espBtn = createBtn1("ESP LOW HP: ON", Color3.fromRGB(200, 0, 0), function(b)
@@ -177,10 +218,8 @@ RS.Heartbeat:Connect(function(dt)
     local hum = char and char:FindFirstChild("Humanoid")
     if not (root and hum) then return end
 
-    -- Logic ESP & HITBOX
     for _, v in pairs(game.Players:GetPlayers()) do
         if v ~= p and v.Character then
-            -- Tích hợp ESP (<30% HP)
             if v.Character:FindFirstChild("Head") then
                 local head = v.Character.Head
                 local eHum = v.Character:FindFirstChild("Humanoid")
@@ -198,7 +237,6 @@ RS.Heartbeat:Connect(function(dt)
                 elseif bill then bill:Destroy() end
             end
 
-            -- Tích hợp HITBOX (Chỉ kích hoạt khi bật Melee Rage hoặc Target Lock)
             if v.Character:FindFirstChild("HumanoidRootPart") then
                 local targetRoot = v.Character.HumanoidRootPart
                 if activeCombat2 or activeMelee then
@@ -208,7 +246,6 @@ RS.Heartbeat:Connect(function(dt)
                     targetRoot.Material = Enum.Material.ForceField
                     targetRoot.CanCollide = false
                 else
-                    -- Auto Reset Hitbox khi tắt
                     targetRoot.Size = Vector3.new(2, 2, 1)
                     targetRoot.Transparency = 1
                 end
@@ -237,22 +274,20 @@ RS.Heartbeat:Connect(function(dt)
     end
 
     if target then
-        -- Teleport áp sát mục tiêu
         root.CFrame = target.CFrame * CFrame.new(0, 0, activeMelee and 1.6 or 2.5)
-        
-        -- AIM SKILL VIPPRO: Khóa thẳng mặt và camera vào mục tiêu, giữ vững trục Y (không bị lộn nhào)
         local lookPos = target.Position
         root.CFrame = CFrame.lookAt(root.Position, Vector3.new(lookPos.X, root.Position.Y, lookPos.Z))
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, lookPos)
-        
         sInfo.Text = "TARGET: " .. target.Parent.Name
     else
-        if hum.MoveDirection.Magnitude > 0 then root.CFrame = root.CFrame + (hum.MoveDirection * (_S * dt)) end
+        if hum.MoveDirection.Magnitude > 0 then 
+            root.CFrame = root.CFrame + (hum.MoveDirection * (_S * dt)) 
+        end
         sInfo.Text = activeMelee and "RAGE: SCANNING..." or "STATUS: IDLE"
     end
 end)
 
--- Attack Loop
+-- Vòng lặp tự động đánh
 task.spawn(function()
     while true do
         if (activeCombat2 or activeMelee) and not systemLock1 then
@@ -263,4 +298,4 @@ task.spawn(function()
     end
 end)
 
-SG:SetCore("SendNotification", { Title = "klưn.z MASTER", Text = "VIPPRO LOADED!", Duration = 3 })
+SG:SetCore("SendNotification", { Title = "klưn.z SYSTEM", Text = "ANTI-TREE ACTIVE!", Duration = 3 })
